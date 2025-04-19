@@ -12,7 +12,7 @@ from typing import Dict, Optional
 
 from .controllers import ExtractionConfig, VideoExtractor
 from .models import ExtractionResult
-from .utils import FFmpegWrapper
+from .ffmpeg import FFmpegWrapper
 
 
 class VideoExtractorGUI:
