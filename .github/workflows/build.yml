@@ -37,7 +37,7 @@ jobs:
             --noconfirm `
             --uac-admin `
             --version-file version.txt `
-            --icon=icon.ico `
+            --icon="./icon.ico" `
             run_gui.py
         dir dist
     
