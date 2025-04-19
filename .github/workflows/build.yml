@@ -36,7 +36,6 @@ jobs:
             --add-data "src/videoxt;videoxt" `
             --clean `
             --noupx `
-            --no-encrypt `
             --noconfirm `
             --uac-admin `
             --version-file version.txt `
