@@ -31,13 +31,15 @@ jobs:
     
     - name: Build EXE
       run: |
+        pwd
+        dir
         pyinstaller --onefile --windowed --name videoxt `
             --add-data "src/videoxt;videoxt" `
             --clean `
             --noconfirm `
             --uac-admin `
             --version-file version.txt `
-            --icon="./icon.ico" `
+            --icon="$(pwd)/icon.ico" `
             run_gui.py
         dir dist
     
