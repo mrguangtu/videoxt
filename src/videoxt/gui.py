@@ -261,11 +261,18 @@ class VideoExtractorGUI:
         self.start_button.config(state=tk.DISABLED)
         self.is_processing = True
         
-        # 在单独的线程中处理视频
-        self.processing_thread = threading.Thread(
-            target=self._process_video,
-            args=(video_path, output_dir, config)
-        )
+        # 在后台线程中处理视频
+        def process_thread():
+            try:
+                self.result = self.extractor.extract(video_path, output_dir)
+                # 使用after方法在主线程中更新UI
+                self.root.after(0, self._process_complete)
+            except Exception as e:
+                # 使用after方法在主线程中处理错误
+                self.root.after(0, lambda: self._process_error(str(e)))
+        
+        # 创建并启动处理线程
+        self.processing_thread = threading.Thread(target=process_thread)
         self.processing_thread.daemon = True
         self.processing_thread.start()
         
