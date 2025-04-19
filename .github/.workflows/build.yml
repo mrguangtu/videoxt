@@ -3,6 +3,8 @@ name: Build EXE
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main ]
 
@@ -26,10 +28,24 @@ jobs:
     
     - name: Build EXE
       run: |
-        pyinstaller --onefile --windowed run_gui.py
+        pyinstaller --onefile --windowed --name videoxt run_gui.py
     
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: videoxt
         path: dist/videoxt.exe
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/videoxt.exe
+        name: Release ${{ github.ref_name }}
+        body: |
+          Release ${{ github.ref_name }}
+          
+          Changes in this release:
+          - See commit history for details
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
