@@ -54,4 +54,4 @@ jobs:
           Changes in this release:
           - See commit history for details
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
