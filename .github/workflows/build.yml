@@ -30,7 +30,7 @@ jobs:
     
     - name: Build EXE
       run: |
-        pyinstaller --onefile --windowed --name videoxt run_gui.py
+        pyinstaller --onefile --windowed --name videoxt --add-data "videoxt;videoxt" run_gui.py
         dir dist
     
     - name: Upload artifact
@@ -38,6 +38,15 @@ jobs:
       with:
         name: videoxt
         path: dist/videoxt.exe
+
+    - name: Debug Info
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        echo "GitHub ref: ${{ github.ref }}"
+        echo "GitHub ref name: ${{ github.ref_name }}"
+        echo "GitHub event name: ${{ github.event_name }}"
+        echo "Is tag: ${{ startsWith(github.ref, 'refs/tags/') }}"
+        dir dist
 
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
