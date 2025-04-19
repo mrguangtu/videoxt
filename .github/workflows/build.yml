@@ -31,11 +31,6 @@ jobs:
     
     - name: Build EXE
       run: |
-        pwd
-        dir
-        if (Test-Path "../icon.ico") {
-            Copy-Item "../icon.ico" -Destination "."
-        }
         dir
         pyinstaller --onefile --windowed --name videoxt `
             --add-data "src/videoxt;videoxt" `
