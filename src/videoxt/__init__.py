@@ -16,6 +16,7 @@ from .models import (
 
 # 导出GUI相关接口
 from .gui import VideoExtractorGUI, main as gui_main
+from .gui_launcher import launch
 
 __all__ = [
     "ExtractionConfig",
@@ -27,4 +28,5 @@ __all__ = [
     "VideoMetadata",
     "VideoExtractorGUI",
     "gui_main",
+    "launch",
 ] 

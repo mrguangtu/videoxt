@@ -275,13 +275,12 @@ class VideoExtractorGUI:
     def _update_progress_periodically(self):
         """定期更新进度条。"""
         if self.is_processing:
-            # 模拟进度更新（实际进度应由处理线程提供）
+            # 模拟进度更新（实际进度难以准确计算）
             current = self.progress_var.get()
-            if current < 90:  # 最多更新到90%，留10%给完成阶段
+            if current < 90:  # 保留最后10%给完成处理
                 self.progress_var.set(current + 1)
-            
-            # 每100毫秒更新一次
-            self.root.after(100, self._update_progress_periodically)
+            # 每500ms更新一次
+            self.root.after(500, self._update_progress_periodically)
 
 
 def main():
