@@ -31,17 +31,17 @@ jobs:
     
     - name: Build EXE
       run: |
-        pyinstaller --onefile --windowed --name videoxt ^
-            --add-data "src/videoxt;videoxt" ^
-            --clean ^
-            --noconfirm ^
-            --uac-admin ^
-            --version-file version.txt ^
-            --icon=icon.ico ^
-            --copyright="Copyright © 2024" ^
-            --file-version=1.0.0 ^
-            --product-version=1.0.0 ^
-            --file-description="Video Keyframe Extractor" ^
+        pyinstaller --onefile --windowed --name videoxt `
+            --add-data "src/videoxt;videoxt" `
+            --clean `
+            --noconfirm `
+            --uac-admin `
+            --version-file version.txt `
+            --icon=icon.ico `
+            --copyright="Copyright © 2024" `
+            --file-version=1.0.0 `
+            --product-version=1.0.0 `
+            --file-description="Video Keyframe Extractor" `
             run_gui.py
         dir dist
     
