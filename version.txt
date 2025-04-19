@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 0, 0, 0),
-    prodvers=(1, 0, 0, 0),
+    filevers=(0, 1, 0, 0),
+    prodvers=(0, 1, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -14,14 +14,14 @@ VSVersionInfo(
       [
         StringTable(
           u'040904B0',
-          [StringStruct(u'CompanyName', u'VideoXT'),
-           StringStruct(u'FileDescription', u'Video Keyframe Extractor'),
-           StringStruct(u'FileVersion', u'1.0.0'),
+          [StringStruct(u'CompanyName', u'mrguangtu'),
+           StringStruct(u'FileDescription', u'视频关键帧提取工具'),
+           StringStruct(u'FileVersion', u'0.1.0'),
            StringStruct(u'InternalName', u'videoxt'),
-           StringStruct(u'LegalCopyright', u'Copyright © 2024'),
+           StringStruct(u'LegalCopyright', u'Copyright (c) 2024 mrguangtu'),
            StringStruct(u'OriginalFilename', u'videoxt.exe'),
-           StringStruct(u'ProductName', u'VideoXT'),
-           StringStruct(u'ProductVersion', u'1.0.0')])
+           StringStruct(u'ProductName', u'videoxt'),
+           StringStruct(u'ProductVersion', u'0.1.0')])
       ])
   ]
 ) 
