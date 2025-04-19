@@ -38,10 +38,6 @@ jobs:
             --uac-admin `
             --version-file version.txt `
             --icon=icon.ico `
-            --copyright="Copyright © 2024" `
-            --file-version=1.0.0 `
-            --product-version=1.0.0 `
-            --file-description="Video Keyframe Extractor" `
             run_gui.py
         dir dist
     
