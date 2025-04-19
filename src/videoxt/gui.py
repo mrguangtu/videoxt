@@ -12,6 +12,7 @@ from typing import Dict, Optional
 
 from .controllers import ExtractionConfig, VideoExtractor
 from .models import ExtractionResult
+from .utils import FFmpegWrapper
 
 
 class VideoExtractorGUI:
@@ -264,30 +265,39 @@ class VideoExtractorGUI:
         # 在后台线程中处理视频
         def process_thread():
             try:
+                # 获取视频总时长
+                ffmpeg = FFmpegWrapper(Path(video_path))
+                metadata = ffmpeg.get_metadata()
+                total_duration = metadata['duration']
+                
+                # 计算总任务数
+                segment_duration = config.segment_duration
+                total_segments = int(total_duration / segment_duration) + (1 if total_duration % segment_duration > 0 else 0)
+                processed_segments = 0
+                
+                def update_progress():
+                    nonlocal processed_segments
+                    if self.is_processing:
+                        progress = (processed_segments / total_segments) * 100
+                        self.progress_var.set(min(progress, 100))
+                        self.root.after(100, update_progress)
+                
+                # 启动进度更新
+                self.root.after(0, update_progress)
+                
+                # 执行提取
                 self.result = self.extractor.extract(video_path, output_dir)
-                # 使用after方法在主线程中更新UI
+                
+                # 处理完成
+                self.progress_var.set(100)
                 self.root.after(0, self._process_complete)
             except Exception as e:
-                # 使用after方法在主线程中处理错误
                 self.root.after(0, lambda: self._process_error(str(e)))
         
         # 创建并启动处理线程
         self.processing_thread = threading.Thread(target=process_thread)
         self.processing_thread.daemon = True
         self.processing_thread.start()
-        
-        # 启动进度更新
-        self._update_progress_periodically()
-
-    def _update_progress_periodically(self):
-        """定期更新进度条。"""
-        if self.is_processing:
-            # 模拟进度更新（实际进度难以准确计算）
-            current = self.progress_var.get()
-            if current < 90:  # 保留最后10%给完成处理
-                self.progress_var.set(current + 1)
-            # 每500ms更新一次
-            self.root.after(500, self._update_progress_periodically)
 
 
 def main():
