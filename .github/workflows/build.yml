@@ -27,10 +27,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller
         pip install -r requirements.txt
+        pip install -e .
     
     - name: Build EXE
       run: |
-        pyinstaller --onefile --windowed --name videoxt --add-data "videoxt;videoxt" run_gui.py
+        pyinstaller --onefile --windowed --name videoxt --add-data "src/videoxt;videoxt" run_gui.py
         dir dist
     
     - name: Upload artifact
