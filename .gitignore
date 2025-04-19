@@ -49,7 +49,6 @@ ENV/
 *.gif
 *.bmp
 *.tiff
-*.ico
 
 # Output directories
 output/
