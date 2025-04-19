@@ -3,7 +3,7 @@
 此模块负责管理和调度视频处理任务，实现高效的并行处理。
 """
 import multiprocessing as mp
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -127,9 +127,9 @@ class TaskScheduler:
         # 分割任务
         tasks = self._split_tasks(video_path)
         
-        # 使用进程池并行处理
+        # 使用线程池并行处理
         results: List[TaskResult] = []
-        with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
+        with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
             futures = [executor.submit(process_segment, task) for task in tasks]
             
             # 使用tqdm显示进度
