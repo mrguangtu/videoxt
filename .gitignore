@@ -55,5 +55,4 @@ ENV/
 output/
 temp/
 cache/
-src/videoxt/__pycache__/__init__.cpython-310.pyc
-src/videoxt/__pycache__/gui.cpython-310.pyc
+src/videoxt/__pycache__/
