@@ -14,6 +14,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -29,6 +31,7 @@ jobs:
     - name: Build EXE
       run: |
         pyinstaller --onefile --windowed --name videoxt run_gui.py
+        dir dist
     
     - name: Upload artifact
       uses: actions/upload-artifact@v2
@@ -42,6 +45,9 @@ jobs:
       with:
         files: dist/videoxt.exe
         name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
         body: |
           Release ${{ github.ref_name }}
           
