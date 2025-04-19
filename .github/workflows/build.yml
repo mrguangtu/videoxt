@@ -33,13 +33,17 @@ jobs:
       run: |
         pwd
         dir
+        if (Test-Path "../icon.ico") {
+            Copy-Item "../icon.ico" -Destination "."
+        }
+        dir
         pyinstaller --onefile --windowed --name videoxt `
             --add-data "src/videoxt;videoxt" `
             --clean `
             --noconfirm `
             --uac-admin `
             --version-file version.txt `
-            --icon="$(pwd)/icon.ico" `
+            --icon="icon.ico" `
             run_gui.py
         dir dist
     
