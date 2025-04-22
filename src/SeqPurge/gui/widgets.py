@@ -46,38 +46,49 @@ class ParameterFrame(ttk.LabelFrame):
         
     def _create_widgets(self):
         # 处理模式选择
-        ttk.Label(self, text="处理模式:").grid(row=0, column=0, sticky=tk.W)
-        self.mode_var = tk.IntVar(value=1)
-        modes = [
-            ("原地删除", 1),
-            ("新建复制", 2),
-            ("新建删除", 3)
-        ]
-        for i, (text, value) in enumerate(modes):
-            ttk.Radiobutton(self, text=text, variable=self.mode_var, value=value).grid(row=0, column=i+1)
-            
-        # 相似度阈值
-        ttk.Label(self, text="相似度阈值:").grid(row=1, column=0, sticky=tk.W)
-        self.threshold_var = tk.DoubleVar(value=5.0)
-        self.threshold_scale = ttk.Scale(self, from_=1, to=10, variable=self.threshold_var, orient=tk.HORIZONTAL)
-        self.threshold_scale.grid(row=1, column=1, columnspan=3, sticky=tk.EW)
-        self.threshold_label = ttk.Label(self, text="5.0%")
-        self.threshold_label.grid(row=1, column=4)
-        self.threshold_scale.config(command=self._update_threshold_label)
+        mode_frame = ttk.LabelFrame(self, text="处理模式", padding="5")
+        mode_frame.pack(fill=tk.X, pady=5)
+        
+        self.mode_var = tk.IntVar(value=self.config.get("mode", 1))
+        ttk.Radiobutton(mode_frame, text="模式1-原地删除", variable=self.mode_var, value=1).pack(anchor=tk.W)
+        ttk.Radiobutton(mode_frame, text="模式2-新建复制", variable=self.mode_var, value=2).pack(anchor=tk.W)
+        ttk.Radiobutton(mode_frame, text="模式3-新建删除", variable=self.mode_var, value=3).pack(anchor=tk.W)
+        
+        # 处理模式说明
+        mode_help = ttk.Label(mode_frame, text="模式1：直接在原文件夹中删除冗余帧\n"
+                                              "模式2：复制保留的帧到新文件夹，使用全局编号\n"
+                                              "模式3：复制保留的帧到新文件夹后删除原文件夹",
+                             justify=tk.LEFT, wraplength=400)
+        mode_help.pack(anchor=tk.W, pady=5)
         
         # 算法选择
-        ttk.Label(self, text="比对算法:").grid(row=2, column=0, sticky=tk.W)
-        self.algorithm_var = tk.StringVar(value="hash")
-        algorithms = [
-            ("哈希比对", "hash"),
-            ("像素比对", "pixel"),
-            ("混合模式", "hybrid")
-        ]
-        for i, (text, value) in enumerate(algorithms):
-            ttk.Radiobutton(self, text=text, variable=self.algorithm_var, value=value).grid(row=2, column=i+1)
-            
-    def _update_threshold_label(self, value):
-        self.threshold_label.config(text=f"{float(value):.1f}%")
+        algo_frame = ttk.LabelFrame(self, text="比对算法", padding="5")
+        algo_frame.pack(fill=tk.X, pady=5)
+        
+        self.algorithm_var = tk.StringVar(value=self.config.get("algorithm", "hash"))
+        ttk.Radiobutton(algo_frame, text="哈希比对", variable=self.algorithm_var, value="hash").pack(anchor=tk.W)
+        ttk.Radiobutton(algo_frame, text="像素比对", variable=self.algorithm_var, value="pixel").pack(anchor=tk.W)
+        ttk.Radiobutton(algo_frame, text="混合模式", variable=self.algorithm_var, value="hybrid").pack(anchor=tk.W)
+        
+        # 算法说明
+        algo_help = ttk.Label(algo_frame, text="哈希比对：使用感知哈希算法，速度快但可能误判\n"
+                                              "像素比对：使用SSIM算法，准确度高但速度较慢\n"
+                                              "混合模式：先使用哈希快速筛选，再用像素比对确认",
+                             justify=tk.LEFT, wraplength=400)
+        algo_help.pack(anchor=tk.W, pady=5)
+        
+        # 阈值设置
+        threshold_frame = ttk.LabelFrame(self, text="相似度阈值", padding="5")
+        threshold_frame.pack(fill=tk.X, pady=5)
+        
+        self.threshold_var = tk.DoubleVar(value=self.config.get("threshold", 5.0))
+        threshold_scale = ttk.Scale(threshold_frame, from_=1, to=10, variable=self.threshold_var, orient=tk.HORIZONTAL)
+        threshold_scale.pack(fill=tk.X, padx=5)
+        
+        # 阈值说明
+        threshold_help = ttk.Label(threshold_frame, text="设置图像相似度阈值（1-10%），值越小越严格",
+                                 justify=tk.LEFT, wraplength=400)
+        threshold_help.pack(anchor=tk.W, pady=5)
         
     def get_mode(self):
         return self.mode_var.get()

@@ -29,6 +29,7 @@ class MainWindow:
         self.control_frame = ttk.Frame(self.main_frame)
         self.start_button = ttk.Button(self.control_frame, text="开始处理", command=self.start_processing)
         self.stop_button = ttk.Button(self.control_frame, text="停止处理", command=self.stop_processing, state=tk.DISABLED)
+        self.cross_dedup_button = ttk.Button(self.control_frame, text="输出目录跨片去重", command=self.start_cross_dedup)
         
     def _setup_layout(self):
         self.main_frame.pack(fill=tk.BOTH, expand=True)
@@ -39,6 +40,7 @@ class MainWindow:
         self.control_frame.pack(fill=tk.X, pady=5)
         self.start_button.pack(side=tk.LEFT, padx=5)
         self.stop_button.pack(side=tk.LEFT, padx=5)
+        self.cross_dedup_button.pack(side=tk.LEFT, padx=5)
         self.progress_frame.pack(fill=tk.X, pady=5)
         self.log_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         
@@ -97,8 +99,53 @@ class MainWindow:
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
             
+    def start_cross_dedup(self):
+        if self.processing:
+            return
+            
+        # 获取输出目录
+        output_dir = self.dir_selector.get_output_dir()
+        if not output_dir:
+            messagebox.showerror("错误", "请选择输出目录")
+            return
+            
+        # 获取参数
+        threshold = self.param_frame.get_threshold()
+        algorithm = self.param_frame.get_algorithm()
+        
+        # 更新UI状态
+        self.processing = True
+        self.cross_dedup_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.NORMAL)
+        
+        # 创建去重器实例
+        self.deduplicator = Deduplicator(
+            input_dir="",  # 不需要输入目录
+            output_dir=output_dir,
+            mode=2,  # 使用模式2
+            threshold=threshold,
+            algorithm=algorithm,
+            progress_callback=self.progress_frame.update_progress,
+            log_callback=self.log_frame.add_log
+        )
+        
+        # 在新线程中启动处理
+        self.processing_thread = threading.Thread(target=self._process_cross_dedup)
+        self.processing_thread.start()
+        
+    def _process_cross_dedup(self):
+        try:
+            # 直接调用跨片段去重
+            self.deduplicator._process_cross_segments([])
+        except Exception as e:
+            self.logger.error(f"跨片段去重过程中发生错误: {str(e)}")
+            messagebox.showerror("错误", f"跨片段去重过程中发生错误: {str(e)}")
+        finally:
+            self._processing_complete()
+            
     def _processing_complete(self):
         self.processing = False
         self.root.after(0, lambda: self.start_button.config(state=tk.NORMAL))
         self.root.after(0, lambda: self.stop_button.config(state=tk.DISABLED))
+        self.root.after(0, lambda: self.cross_dedup_button.config(state=tk.NORMAL))
         messagebox.showinfo("完成", "处理完成") 

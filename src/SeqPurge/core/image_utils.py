@@ -38,12 +38,33 @@ class ImageComparator:
         if img1.shape != img2.shape:
             img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]))
             
-        # 计算均方误差
-        mse = np.mean((img1 - img2) ** 2)
+        # 转换为灰度图
+        gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
         
-        # 将MSE转换为相似度百分比
-        max_mse = 255 * 255
-        similarity = (1 - mse / max_mse) * 100
+        # 计算结构相似性指数 (SSIM)
+        C1 = (0.01 * 255) ** 2
+        C2 = (0.03 * 255) ** 2
+        
+        # 计算均值
+        mu1 = cv2.GaussianBlur(gray1, (11, 11), 1.5)
+        mu2 = cv2.GaussianBlur(gray2, (11, 11), 1.5)
+        
+        # 计算方差和协方差
+        mu1_sq = mu1 * mu1
+        mu2_sq = mu2 * mu2
+        mu1_mu2 = mu1 * mu2
+        
+        sigma1_sq = cv2.GaussianBlur(gray1 * gray1, (11, 11), 1.5) - mu1_sq
+        sigma2_sq = cv2.GaussianBlur(gray2 * gray2, (11, 11), 1.5) - mu2_sq
+        sigma12 = cv2.GaussianBlur(gray1 * gray2, (11, 11), 1.5) - mu1_mu2
+        
+        # 计算SSIM
+        ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+        ssim = np.mean(ssim_map)
+        
+        # 将SSIM转换为百分比
+        similarity = ssim * 100
         return similarity > (100 - self.threshold)
         
     def _compare_hybrid(self, img1_path, img2_path):

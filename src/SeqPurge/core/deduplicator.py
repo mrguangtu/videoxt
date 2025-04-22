@@ -80,10 +80,8 @@ class Deduplicator:
             self._copy_kept_frames(segment_dir, keep_frames, segment_index)
             
     def _process_cross_segments(self, segment_dirs):
-        if len(segment_dirs) < 2:
-            return
-            
-        self.log_callback("开始跨片段去重...")
+        """全量扫描去重"""
+        self.log_callback("开始全量跨片段去重...")
         
         # 从目标文件夹中获取所有文件
         all_frames = []
@@ -101,32 +99,42 @@ class Deduplicator:
         # 按片段索引和帧号排序
         all_frames.sort(key=lambda x: (x[1], x[2]))
         
-        # 获取每个片段的最后一帧
-        last_frames = []
-        current_segment = -1
+        if not all_frames:
+            self.log_callback("没有找到需要处理的文件")
+            return
+            
+        # 初始化基准帧
+        keep_frames = []
+        last_kept_frame = None
         
+        # 遍历所有帧进行去重
         for frame_info in all_frames:
-            filename, segment_idx, _ = frame_info
-            if segment_idx != current_segment:
-                # 新片段开始，添加上一片段的最后一帧
-                if last_frames:
-                    last_frames.append(os.path.join(self.output_dir, filename))
-                current_segment = segment_idx
-                
-        # 添加最后一个片段的最后一帧
-        if all_frames:
-            last_frames.append(os.path.join(self.output_dir, all_frames[-1][0]))
-                
-        # 比较相邻片段的最后一帧
-        for i in range(len(last_frames) - 1):
             if self.stop_flag:
                 break
                 
-            if self.comparator.is_similar(last_frames[i], last_frames[i + 1]):
-                # 如果相似，删除第二个片段的最后一帧
-                os.remove(last_frames[i + 1])
-                self.log_callback(f"删除重复帧: {os.path.basename(last_frames[i + 1])}")
+            filename, segment_idx, frame_num = frame_info
+            current_frame = os.path.join(self.output_dir, filename)
+            
+            if last_kept_frame is None:
+                # 保留第一帧
+                keep_frames.append(filename)
+                last_kept_frame = current_frame
+            else:
+                # 比较当前帧与上一保留帧
+                if not self.comparator.is_similar(current_frame, last_kept_frame):
+                    keep_frames.append(filename)
+                    last_kept_frame = current_frame
+                    
+        # 删除冗余帧
+        for frame_info in all_frames:
+            filename, _, _ = frame_info
+            if filename not in keep_frames:
+                frame_path = os.path.join(self.output_dir, filename)
+                os.remove(frame_path)
+                self.log_callback(f"删除冗余帧: {filename}")
                 
+        self.log_callback(f"跨片段去重完成，保留 {len(keep_frames)} 帧，删除 {len(all_frames) - len(keep_frames)} 帧")
+        
     def _delete_redundant_frames(self, segment_dir, all_frames, keep_frames):
         for frame in all_frames:
             if frame not in keep_frames:
