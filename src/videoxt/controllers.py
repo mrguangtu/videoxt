@@ -20,6 +20,7 @@ class ExtractionConfig:
     output_format: str = "png"  # 输出图像格式
     audio_format: str = "mp3"  # 输出音频格式
     quality: int = 95  # 输出质量（1-100）
+    interval_seconds: float = 0.5  # 帧提取间隔（秒）
 
 
 class VideoExtractor:
@@ -77,7 +78,11 @@ class VideoExtractor:
             json.dump(self.config.__dict__, f, indent=2)
 
         # 处理视频
-        result = self.scheduler.process_video(video_path, output_dir)
+        result = self.scheduler.process_video(
+            video_path, 
+            output_dir,
+            interval_seconds=self.config.interval_seconds
+        )
 
         # 保存处理报告
         report_path = output_dir / "report.json"

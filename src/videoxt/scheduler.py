@@ -25,39 +25,40 @@ class TaskResult:
 
 
 def process_segment(task: ExtractionTask) -> TaskResult:
-    """处理单个视频片段。
+    """处理视频片段。
 
     Args:
-        task: 提取任务
+        task: 处理任务
 
     Returns:
         TaskResult: 处理结果
     """
     try:
-        ffmpeg = FFmpegWrapper(task['video_path'])
-        output_dir = task['output_dir'] / f"segment_{task['task_id']}"
+        ffmpeg = FFmpegWrapper(task.video_path)
+        output_dir = task.output_dir / f"segment_{task.task_id}"
         
         # 并行提取关键帧和音频
         keyframes = ffmpeg.extract_keyframes(
             output_dir,
-            task['start_time'],
-            task['end_time']
+            task.start_time,
+            task.end_time,
+            interval_seconds=task.interval_seconds
         )
         
         audio_segment = ffmpeg.extract_audio(
             output_dir,
-            task['start_time'],
-            task['end_time']
+            task.start_time,
+            task.end_time
         )
         
         return TaskResult(
-            task_id=task['task_id'],
+            task_id=task.task_id,
             keyframes=keyframes,
             audio_segment=audio_segment
         )
     except Exception as e:
         return TaskResult(
-            task_id=task['task_id'],
+            task_id=task.task_id,
             keyframes=[],
             audio_segment=None,
             error=str(e)
@@ -75,19 +76,20 @@ class TaskScheduler:
         """
         self.n_workers = n_workers or mp.cpu_count()
 
-    def _split_tasks(self, video_path: Path, segment_duration: float = 30.0) -> List[ExtractionTask]:
+    def _split_tasks(self, video_path: Path, segment_duration: float = 30.0, interval_seconds: float = 0.5) -> List[ExtractionTask]:
         """将视频分割成多个处理任务。
 
         Args:
             video_path: 视频文件路径
             segment_duration: 每个片段的时长（秒）
+            interval_seconds: 帧提取间隔（秒）
 
         Returns:
             List[ExtractionTask]: 任务列表
         """
         ffmpeg = FFmpegWrapper(video_path)
         metadata = ffmpeg.get_metadata()
-        duration = metadata['duration']
+        duration = metadata.duration
         
         tasks = []
         current_time = 0.0
@@ -101,19 +103,21 @@ class TaskScheduler:
                 start_time=current_time,
                 end_time=end_time,
                 output_dir=video_path.parent / "output",
-                task_id=task_id
+                task_id=task_id,
+                interval_seconds=interval_seconds
             ))
             
             current_time = end_time
             
         return tasks
 
-    def process_video(self, video_path: Path, output_dir: Path) -> ExtractionResult:
+    def process_video(self, video_path: Path, output_dir: Path, interval_seconds: float = 0.5) -> ExtractionResult:
         """处理整个视频。
 
         Args:
             video_path: 视频文件路径
             output_dir: 输出目录
+            interval_seconds: 帧提取间隔（秒），默认0.5秒
 
         Returns:
             ExtractionResult: 处理结果
@@ -125,7 +129,7 @@ class TaskScheduler:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 分割任务
-        tasks = self._split_tasks(video_path)
+        tasks = self._split_tasks(video_path, interval_seconds=interval_seconds)
         
         # 使用线程池并行处理
         results: List[TaskResult] = []

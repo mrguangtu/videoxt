@@ -10,7 +10,8 @@ from typing import Dict, List, Optional, TypedDict, Union
 import numpy as np
 
 
-class VideoMetadata(TypedDict):
+@dataclass
+class VideoMetadata:
     """视频元数据信息。"""
     duration: float  # 视频时长（秒）
     width: int  # 视频宽度
@@ -21,12 +22,15 @@ class VideoMetadata(TypedDict):
     total_frames: int  # 总帧数
 
 
-class ExtractionTask(TypedDict):
+@dataclass
+class ExtractionTask:
     """视频提取任务定义。"""
+    video_path: Path  # 视频文件路径
     start_time: float  # 开始时间（秒）
     end_time: float  # 结束时间（秒）
     output_dir: Path  # 输出目录
     task_id: str  # 任务ID
+    interval_seconds: float  # 帧提取间隔（秒）
 
 
 @dataclass

@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 import ffmpeg
 from ffmpeg.nodes import Stream
 
-from .models import AudioSegment, KeyframeInfo, VideoMetadata
+from .models import AudioSegment, KeyframeInfo, VideoMetadata, ExtractionTask
 
 
 class FFmpegError(Exception):
@@ -60,30 +60,42 @@ class FFmpegWrapper:
         except Exception as e:
             raise FFmpegError(f"获取视频元数据失败: {str(e)}")
 
-    def extract_keyframes(self, output_dir: Path, start_time: float, end_time: float) -> List[KeyframeInfo]:
-        """提取指定时间段的关键帧。
+    def extract_keyframes(self, output_dir: Path, start_time: float, end_time: float, interval_seconds: float = 0.5) -> List[KeyframeInfo]:
+        """提取指定时间段的帧。
 
         Args:
             output_dir: 输出目录
             start_time: 开始时间（秒）
             end_time: 结束时间（秒）
+            interval_seconds: 提取帧的时间间隔（秒），默认0.5秒
 
         Returns:
-            List[KeyframeInfo]: 关键帧信息列表
+            List[KeyframeInfo]: 帧信息列表
 
         Raises:
             FFmpegError: 当提取失败时抛出
         """
         output_dir.mkdir(parents=True, exist_ok=True)
-        keyframes: List[KeyframeInfo] = []
+        frames: List[KeyframeInfo] = []
 
         try:
-            # 使用 ffmpeg 提取关键帧
+            # 获取视频帧率并计算帧间隔
+            metadata = self.get_metadata()
+            fps = metadata.fps
+            frame_interval = int(fps * interval_seconds)  # 每隔多少帧提取一帧
+
+            # 使用 ffmpeg 提取帧
             stream = (
                 ffmpeg
                 .input(str(self.video_path), ss=start_time, t=end_time-start_time)
-                .filter('select', 'eq(pict_type,I)')
-                .output(str(output_dir / 'frame_%d.png'), vsync='0')
+                .filter('select', f'not(mod(n,{frame_interval}))')  # 按间隔提取帧
+                .filter('setpts', 'N/FRAME_RATE/TB')  # 修正时间戳
+                .output(str(output_dir / 'frame_%d.png'), 
+                       vsync='1',                      # 使用 CFR 模式确保帧序
+                       **{
+                           'qscale:v': '1',           # 最高质量
+                           'pix_fmt': 'rgb24'         # RGB24格式
+                       })
                 .overwrite_output()
                 .global_args('-loglevel', 'error')
             )
@@ -93,22 +105,22 @@ class FFmpegWrapper:
             stdout, stderr = process.communicate()
 
             if process.returncode != 0:
-                raise FFmpegError(f"提取关键帧失败: {stderr.decode()}")
+                raise FFmpegError(f"提取帧失败: {stderr.decode()}")
 
-            # 解析输出获取关键帧信息
+            # 解析输出获取帧信息
             for frame_file in sorted(output_dir.glob('frame_*.png')):
                 frame_num = int(frame_file.stem.split('_')[1])
-                pts = start_time + (frame_num / self.get_metadata()['fps'])
-                keyframes.append(KeyframeInfo(
+                pts = start_time + (frame_num * interval_seconds)  # 使用间隔计算实际时间戳
+                frames.append(KeyframeInfo(
                     pts=pts,
-                    frame_type='I',
+                    frame_type='F',  # 使用 'F' 表示这是按间隔提取的帧
                     file_path=frame_file,
-                    quality=1.0  # 默认质量分数
+                    quality=1.0  # 最高质量
                 ))
 
-            return keyframes
+            return frames
         except Exception as e:
-            raise FFmpegError(f"提取关键帧失败: {str(e)}")
+            raise FFmpegError(f"提取帧失败: {str(e)}")
 
     def extract_audio(self, output_dir: Path, start_time: float, end_time: float) -> AudioSegment:
         """提取指定时间段的音频。
@@ -149,4 +161,39 @@ class FFmpegWrapper:
                 channels=int(audio_info['channels'])
             )
         except Exception as e:
-            raise FFmpegError(f"提取音频失败: {str(e)}") 
+            raise FFmpegError(f"提取音频失败: {str(e)}")
+
+    def _split_tasks(self, video_path: Path, segment_duration: float = 30.0, interval_seconds: float = 0.5) -> List[ExtractionTask]:
+        """将视频分割成多个处理任务。
+
+        Args:
+            video_path: 视频文件路径
+            segment_duration: 每个片段的时长（秒）
+            interval_seconds: 帧提取间隔（秒）
+
+        Returns:
+            List[ExtractionTask]: 任务列表
+        """
+        ffmpeg = FFmpegWrapper(video_path)
+        metadata = ffmpeg.get_metadata()
+        duration = metadata.duration
+        
+        tasks = []
+        current_time = 0.0
+        
+        while current_time < duration:
+            end_time = min(current_time + segment_duration, duration)
+            task_id = f"{current_time:.1f}_{end_time:.1f}"
+            
+            tasks.append(ExtractionTask(
+                video_path=video_path,
+                start_time=current_time,
+                end_time=end_time,
+                output_dir=video_path.parent / "output",
+                task_id=task_id,
+                interval_seconds=interval_seconds  # 添加这个参数
+            ))
+            
+            current_time = end_time
+            
+        return tasks

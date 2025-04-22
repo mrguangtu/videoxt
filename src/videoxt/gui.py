@@ -47,6 +47,7 @@ class VideoExtractorGUI:
         self.output_format = tk.StringVar(value="png")
         self.audio_format = tk.StringVar(value="mp3")
         self.quality = tk.IntVar(value=95)
+        self.interval_seconds = tk.DoubleVar(value=0.5)  # 添加帧提取间隔参数
         
         # 创建界面元素
         self._create_widgets()
@@ -96,6 +97,10 @@ class VideoExtractorGUI:
         # 第三行
         ttk.Label(param_frame, text="输出质量(1-100):").grid(row=2, column=0, sticky=tk.W)
         ttk.Scale(param_frame, from_=1, to=100, variable=self.quality, orient=tk.HORIZONTAL, length=200).grid(row=2, column=1, columnspan=3, sticky=tk.W)
+        
+        # 第四行 - 添加帧提取间隔控件
+        ttk.Label(param_frame, text="帧提取间隔(秒):").grid(row=3, column=0, sticky=tk.W)
+        ttk.Entry(param_frame, textvariable=self.interval_seconds, width=10).grid(row=3, column=1, sticky=tk.W)
         
         # 操作区域
         action_frame = ttk.Frame(self.main_frame)
@@ -187,7 +192,8 @@ class VideoExtractorGUI:
             self.root.after(0, self._process_complete)
         except Exception as e:
             # 处理错误（在主线程中）
-            self.root.after(0, lambda: self._process_error(str(e)))
+            error_message = str(e)
+            self.root.after(0, lambda: self._process_error(error_message))
 
     def _process_complete(self):
         """处理完成回调。"""
@@ -245,7 +251,8 @@ class VideoExtractorGUI:
             n_workers=self.n_workers.get() or None,
             output_format=self.output_format.get(),
             audio_format=self.audio_format.get(),
-            quality=self.quality.get()
+            quality=self.quality.get(),
+            interval_seconds=self.interval_seconds.get()  # 添加帧提取间隔参数
         )
         
         # 创建提取器
@@ -268,7 +275,7 @@ class VideoExtractorGUI:
                 # 获取视频总时长
                 ffmpeg = FFmpegWrapper(Path(video_path))
                 metadata = ffmpeg.get_metadata()
-                total_duration = metadata['duration']
+                total_duration = metadata.duration  # 修改这里，使用属性访问
                 
                 # 计算总任务数
                 segment_duration = config.segment_duration
@@ -292,7 +299,8 @@ class VideoExtractorGUI:
                 self.progress_var.set(100)
                 self.root.after(0, self._process_complete)
             except Exception as e:
-                self.root.after(0, lambda: self._process_error(str(e)))
+                error_message = str(e)
+                self.root.after(0, lambda: self._process_error(error_message))
         
         # 创建并启动处理线程
         self.processing_thread = threading.Thread(target=process_thread)
